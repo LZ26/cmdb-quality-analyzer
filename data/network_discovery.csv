@@ -1,0 +1,11 @@
+ci_name,ip_address,ci_type,environment,owner,status,last_discovered,location
+web-server-01,192.168.1.100,Server,Production,John Smith,Active,2024-02-15,NYC-DC1
+web_server_01,192.168.1.100,Server,Production,John Smith,Active,2024-02-16,NYC-DC1
+db-primary-prod,10.0.1.50,Database Server,Production,Sarah Lee,Active,2024-02-15,NYC-DC1
+app-server-east,172.16.5.20,Application Server,Production,,Active,2024-02-14,NYC-DC2
+firewall-01,192.168.100.1,Network Device,Production,Mike Chen,Active,2024-02-15,NYC-DC1
+lb-prod-01,10.0.2.100,Load Balancer,Production,Sarah Lee,Active,2024-02-16,NYC-DC1
+cache-server,,,Production,John Smith,Active,2024-02-13,NYC-DC1
+backup-server-01,192.168.2.50,Server,DR,Tom Wilson,Active,2024-02-15,NJ-DC1
+monitoring-host,10.1.1.10,Monitoring,Production,Mike Chen,Active,2024-02-14,NYC-DC1
+web-server-02,192.168.1.101,Server,Production,John Smith,Active,2024-02-15,NYC-DC1

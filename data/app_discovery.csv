@@ -1,0 +1,10 @@
+ci_name,ip_address,ci_type,environment,owner,status,last_discovered,location
+webserver01,192.168.1.100,Web Server,Prod,J. Smith,Running,2024-02-16,NYC-DC1
+db-primary-prod,10.0.1.50,Database,Production,Sarah Lee,Active,2024-02-16,NYC-DC1
+app-server-east,172.16.5.20,App Server,Production,Infrastructure Team,Active,2024-02-15,NYC-DC2
+api-gateway,10.0.3.50,API Gateway,Production,Sarah Lee,Active,2024-02-15,NYC-DC1
+cache-server,10.0.4.25,Cache,Production,John Smith,Active,2024-02-16,NYC-DC1
+message-queue,172.16.10.30,Message Queue,Production,Mike Chen,Active,2024-02-14,NYC-DC2
+lb-prod-01,10.0.2.100,Load Balancer,Production,S. Lee,Active,2024-02-15,NYC-DC1
+search-engine,10.0.5.75,,Production,Tom Wilson,Active,2024-02-13,NYC-DC1
+analytics-db,10.0.1.51,Database Server,Production,Sarah Lee,Active,2024-02-16,NYC-DC1
