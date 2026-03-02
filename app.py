@@ -134,7 +134,7 @@ with st.sidebar:
     
     st.divider()
     
-    st.caption("Built by Luis Zokirjonov  \nT-Mobile ServiceNow CMDB Internship  \nFebruary 2026")
+    st.caption("Built by Laziz • February 2026")
 
 # Load data
 @st.cache_data(ttl=300)
@@ -587,6 +587,6 @@ with tab4:
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: #6b7280; padding: 1.5rem;'>
-    <p style='margin: 0; font-weight: 500;'>Built by Luis Zokirjonov • T-Mobile ServiceNow CMDB Internship • February 2026</p>
+    <p style='margin: 0; font-weight: 500;'>Built by Laziz • February 2026</p>
 </div>
 """, unsafe_allow_html=True)
