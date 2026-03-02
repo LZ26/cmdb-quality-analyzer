@@ -52,6 +52,9 @@ class AIInsightsEngine:
             except ImportError:
                 print("Warning: anthropic package not available, using demo mode")
                 self.demo_mode = True
+            except Exception as e:
+                print(f"Warning: Could not initialize Anthropic client: {e}")
+                self.demo_mode = True
         else:
             print("AI Insights: Demo mode enabled (no API calls)")
             self.demo_mode = True
