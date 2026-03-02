@@ -1,7 +1,16 @@
 ci_name,ip_address,ci_type,environment,owner,status,last_discovered,location
 WEB-SERVER-01,192.168.1.100,Server,Production,John Smith,Active,2024-02-10,
-test-server,192.168.50.10,Server,Test,,Active,2024-02-12,NYC-DC1
-db-replica,10.0.1.52,Database,Production,Sarah Lee,Active,2024-02-14,NYC-DC1
+WEB_SERVER_02,192.168.1.101,Server,Prod,,Active,2024-02-10,NYC-DC1
+DB_Primary_Prod,10.0.1.50,DB,Production,Sarah Lee,Active,2024-02-14,NYC-DC1
+db_replica_01,10.0.1.51,Database,Production,Sarah,Active,2024-02-14,
+app-server-east-01,172.16.5.20,,Production,Mike Chen,Active,2024-02-12,NYC-DC2
+FIREWALL-DMZ-01,192.168.100.1,Firewall,Prod,Network,Active,2024-02-11,NYC-DC1
+lb-prod-01,10.0.2.100,LB,Production,Sarah Lee,Active,2024-02-11,NYC-DC1
+cache_server,10.0.4.25,Redis,Production,J.Smith,Active,2024-02-10,NYC-DC1
+backup-svr-01,192.168.2.50,Backup,DR,Tom Wilson,Active,2024-02-11,NJ-DC1
+BACKUP_SERVER_02,192.168.2.51,Backup Server,DR,T. Wilson,Active,2024-02-11,
+monitoring-host,10.1.1.10,Monitor,Prod,,Active,2024-02-10,NYC-DC1
 old-app-server,,,Decommissioned,Unknown,Inactive,2024-01-15,NYC-DC2
-backup-svr-01,192.168.2.50,Backup Server,DR,Tom Wilson,Active,2024-02-11,NJ-DC1
+test-server,192.168.50.10,Server,Test,,Active,2024-02-12,NYC-DC1
 dev-machine,192.168.100.25,Laptop,Development,Jane Doe,Active,2024-02-13,Remote
+API_GATEWAY_01,10.0.3.50,API,Production,S.Lee,Active,2024-02-10,NYC-DC1

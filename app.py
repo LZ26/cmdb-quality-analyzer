@@ -107,13 +107,20 @@ with st.sidebar:
     
     if not api_key_exists:
         demo_mode = True
-        st.info("🔒 Demo mode enabled")
+        st.info("Demo mode enabled (No API key)")
     else:
-        # Read default from .env
-        demo_mode_env = os.getenv('DEMO_MODE', 'true').lower()
+        # Read from Streamlit secrets (deployed) or .env (local)
+        demo_mode_env = st.secrets.get("DEMO_MODE", os.getenv('DEMO_MODE', 'true')).lower()
         default_demo = demo_mode_env in ['true', '1', 'yes']
-    
-        demo_mode = st.checkbox("Demo Mode (No API)", value=default_demo)
+        
+        # Show current mode
+        if default_demo:
+            st.warning("Running in Demo Mode")
+        else:
+            st.success("Live AI Mode Active")
+        
+        demo_mode = st.checkbox("Demo Mode (No API)", value=default_demo, 
+                            help="Toggle between live AI and demo mode")
     
     similarity_threshold = st.slider(
         "Fuzzy Match Threshold (%)",
