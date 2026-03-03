@@ -6,6 +6,7 @@ from core.ai_insights import AIInsightsEngine
 import plotly.graph_objects as go
 import plotly.express as px
 import os
+import time
 
 # Page config
 st.set_page_config(
@@ -423,9 +424,102 @@ with tab2:
 with tab3:
     st.markdown("### AI-Powered Recommendations")
     
-    try:
-        with st.spinner("Generating AI insights..."):
-            root_cause = ai_engine.analyze_root_causes(duplicate_analysis, quality_scores)
+    # Initialize session state for AI insights
+    if 'ai_insights_generated' not in st.session_state:
+        st.session_state.ai_insights_generated = False
+    if 'ai_insights_data' not in st.session_state:
+        st.session_state.ai_insights_data = None
+    
+    # Check if we should auto-generate (for first load in live mode)
+    should_auto_generate = not demo_mode and not st.session_state.ai_insights_generated
+    
+    # Show generate button or auto-generate
+    if not st.session_state.ai_insights_generated:
+        st.info("💡 **Ready to analyze:** Click below to generate AI-powered insights from your CMDB data.")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            generate_button = st.button(
+                "🤖 Generate AI Insights",
+                type="primary",
+                use_container_width=True,
+                help="Analyze duplicates and generate recommendations using Claude AI"
+            )
+        
+        # Auto-generate if in live mode and first load
+        if generate_button or should_auto_generate:
+            # Loading UI with progress
+            progress_container = st.empty()
+            status_container = st.empty()
+            
+            with progress_container.container():
+                st.markdown("""
+                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            padding: 30px;
+                            border-radius: 12px;
+                            text-align: center;
+                            color: white;'>
+                    <h2 style='margin: 0; color: white;'>🤖 AI Analysis in Progress</h2>
+                    <p style='margin: 10px 0 0 0; opacity: 0.9;'>Processing your CMDB data with Claude AI...</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Progress steps
+            steps = [
+                ("📊 Loading duplicate groups...", 0.5),
+                ("🔍 Analyzing data quality patterns...", 1.0),
+                ("🧠 Identifying root causes...", 1.5),
+                ("💡 Generating recommendations...", 1.5),
+                ("📈 Calculating impact estimates...", 1.0),
+                ("✨ Finalizing insights...", 0.5)
+            ]
+            
+            progress_bar = status_container.progress(0)
+            status_text = st.empty()
+            
+            import time
+            total_steps = len(steps)
+            for i, (step_text, delay) in enumerate(steps):
+                status_text.markdown(f"**{step_text}**")
+                progress_bar.progress((i + 1) / total_steps)
+                time.sleep(delay)
+            
+            # Generate actual AI insights
+            try:
+                root_cause = ai_engine.analyze_root_causes(duplicate_analysis, quality_scores)
+                st.session_state.ai_insights_data = root_cause
+                st.session_state.ai_insights_generated = True
+                
+                # Clear loading UI
+                progress_container.empty()
+                status_container.empty()
+                status_text.empty()
+                
+                # Success message
+                st.success("✅ AI analysis complete! Insights generated successfully.")
+                time.sleep(1)
+                st.rerun()
+                
+            except Exception as e:
+                progress_container.empty()
+                status_container.empty()
+                status_text.empty()
+                st.error(f"❌ AI insights generation failed: {str(e)}")
+                st.info("💡 Tip: Check your API key and try again, or switch to Demo Mode in the sidebar.")
+    
+    else:
+        # Display generated insights
+        root_cause = st.session_state.ai_insights_data
+        
+        # Add a subtle header with refresh option
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.markdown("#### 🎯 Analysis Results")
+        with col2:
+            if st.button("🔄 Regenerate", help="Generate fresh AI insights"):
+                st.session_state.ai_insights_generated = False
+                st.session_state.ai_insights_data = None
+                st.rerun()
         
         # Executive summary
         st.info(f"**Executive Summary:** {root_cause.get('summary', 'Analysis complete')}")
@@ -496,7 +590,7 @@ with tab3:
                         sample_ci_details.append(ci_matches.iloc[0].to_dict())
                 
                 if sample_ci_details:
-                    with st.spinner("Analyzing..."):
+                    with st.spinner("Analyzing duplicate group..."):
                         try:
                             recommendation = ai_engine.analyze_duplicate_group(sample_group, sample_ci_details)
                             
@@ -516,9 +610,6 @@ with tab3:
                                     st.markdown(f"- {step}")
                         except Exception as e:
                             st.error(f"Failed to generate recommendation: {str(e)}")
-    
-    except Exception as e:
-        st.error(f"❌ AI insights failed: {str(e)}")
 
 # TAB 4: Data Quality
 with tab4:
