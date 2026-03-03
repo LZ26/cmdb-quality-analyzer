@@ -429,14 +429,23 @@ with tab3:
         st.session_state.ai_insights_generated = False
     if 'ai_insights_data' not in st.session_state:
         st.session_state.ai_insights_data = None
+    if 'show_generate_button' not in st.session_state:
+        st.session_state.show_generate_button = True
     
-    # Show Generate button or Results
-    if not st.session_state.ai_insights_generated:
+    # Local variable to track if we just generated THIS render
+    just_generated_now = False
+    current_results = None
+    
+    # Show Generate button only if we should
+    if st.session_state.show_generate_button and not st.session_state.ai_insights_generated:
         st.info("💡 **Ready to analyze:** Click below to generate AI-powered insights from your CMDB data.")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("🤖 Generate AI Insights", type="primary", use_container_width=True, help="Analyze duplicates and generate recommendations using Claude AI"):
+                # Hide button for next renders
+                st.session_state.show_generate_button = False
+                
                 # Loading UI
                 progress_container = st.empty()
                 status_container = st.empty()
@@ -481,7 +490,9 @@ with tab3:
                     # Success message
                     st.success("✅ AI analysis complete! Insights generated successfully.")
                     
-                    # NO st.rerun() - display results below immediately
+                    # Set local flag and data for immediate display
+                    just_generated_now = True
+                    current_results = root_cause
                     
                 except Exception as e:
                     progress_container.empty()
@@ -489,105 +500,110 @@ with tab3:
                     status_text.empty()
                     st.error(f"❌ AI insights generation failed: {str(e)}")
                     st.info("💡 Tip: Check your API key and try again, or switch to Demo Mode in the sidebar.")
+                    # Reset button on error
+                    st.session_state.show_generate_button = True
     
-    # Display results (if generated)
-    if st.session_state.ai_insights_generated and st.session_state.ai_insights_data:
-        root_cause_to_display = st.session_state.ai_insights_data
+    # Display results (either just generated OR from session state)
+    if just_generated_now or (st.session_state.ai_insights_generated and st.session_state.ai_insights_data):
+        # Use just-generated data if available, otherwise use cached
+        root_cause_to_display = current_results if just_generated_now else st.session_state.ai_insights_data
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Header with Regenerate
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            st.markdown("#### 🎯 Analysis Results")
-        with col2:
-            if st.button("🔄 Regenerate", help="Generate fresh AI insights"):
-                st.session_state.ai_insights_generated = False
-                st.session_state.ai_insights_data = None
-                st.rerun()
-        
-        # Executive summary
-        st.info(f"**Executive Summary:** {root_cause_to_display.get('summary', 'Analysis complete')}")
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Root causes
-        st.markdown("#### Root Causes Identified")
-        root_causes = root_cause_to_display.get('root_causes', [])
-        if root_causes:
-            for i, cause in enumerate(root_causes, 1):
-                with st.expander(f"**{i}. {cause.get('cause', 'Unknown')}** (Impact: {cause.get('impact', 'Unknown')})", expanded=(i == 1)):
-                    st.markdown(f"**Affected Records:** {cause.get('affected_records', 0)}")
-                    st.markdown(f"**Explanation:** {cause.get('explanation', 'No details')}")
-        else:
-            st.info("No root causes identified")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Recommendations
-        st.markdown("#### Actionable Recommendations")
-        recommendations = root_cause_to_display.get('recommendations', [])
-        if recommendations:
-            for i, rec in enumerate(recommendations, 1):
-                priority = rec.get('priority', 'Medium')
-                priority_icon = "🔴" if priority == 'High' else "🟡" if priority == 'Medium' else "🟢"
-                with st.expander(f"{priority_icon} **[{priority}] {rec.get('recommendation', 'Recommendation')}**", expanded=(i == 1)):
-                    st.markdown(rec.get('details', 'No details available'))
-        else:
-            st.info("No recommendations at this time")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Estimated impact
-        st.markdown("#### Estimated Impact")
-        estimated_impact = root_cause_to_display.get('estimated_impact', {})
-        if estimated_impact:
-            cols = st.columns(len(estimated_impact))
-            for col, (metric, value) in zip(cols, estimated_impact.items()):
-                with col:
-                    st.markdown(f"""
-                    <div style='background-color: white; padding: 16px; border-radius: 8px; 
-                                border: 2px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;'>
-                        <p style='color: #6b7280; margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 500; 
-                                   text-transform: uppercase; letter-spacing: 0.05em;'>{metric.replace('_', ' ').title()}</p>
-                        <p style='color: #2563eb; margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2;'>{value}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-        else:
-            st.info("Impact estimates not available")
-        
-        # Sample resolution
-        if duplicate_groups and len(duplicate_groups) > 0:
+        if root_cause_to_display:
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("#### Sample Duplicate Resolution")
             
-            sample_group = max(duplicate_groups, key=lambda x: len(x.get('cis', [])))
-            if sample_group.get('cis'):
-                sample_ci_details = []
-                for ci_name in sample_group['cis']:
-                    ci_matches = df[df['ci_name'] == ci_name]
-                    if len(ci_matches) > 0:
-                        sample_ci_details.append(ci_matches.iloc[0].to_dict())
+            # Header with Regenerate
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown("#### 🎯 Analysis Results")
+            with col2:
+                if st.button("🔄 Regenerate", help="Generate fresh AI insights"):
+                    st.session_state.ai_insights_generated = False
+                    st.session_state.ai_insights_data = None
+                    st.session_state.show_generate_button = True
+                    st.rerun()
+            
+            # Executive summary
+            st.info(f"**Executive Summary:** {root_cause_to_display.get('summary', 'Analysis complete')}")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Root causes
+            st.markdown("#### Root Causes Identified")
+            root_causes = root_cause_to_display.get('root_causes', [])
+            if root_causes:
+                for i, cause in enumerate(root_causes, 1):
+                    with st.expander(f"**{i}. {cause.get('cause', 'Unknown')}** (Impact: {cause.get('impact', 'Unknown')})", expanded=(i == 1)):
+                        st.markdown(f"**Affected Records:** {cause.get('affected_records', 0)}")
+                        st.markdown(f"**Explanation:** {cause.get('explanation', 'No details')}")
+            else:
+                st.info("No root causes identified")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Recommendations
+            st.markdown("#### Actionable Recommendations")
+            recommendations = root_cause_to_display.get('recommendations', [])
+            if recommendations:
+                for i, rec in enumerate(recommendations, 1):
+                    priority = rec.get('priority', 'Medium')
+                    priority_icon = "🔴" if priority == 'High' else "🟡" if priority == 'Medium' else "🟢"
+                    with st.expander(f"{priority_icon} **[{priority}] {rec.get('recommendation', 'Recommendation')}**", expanded=(i == 1)):
+                        st.markdown(rec.get('details', 'No details available'))
+            else:
+                st.info("No recommendations at this time")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Estimated impact
+            st.markdown("#### Estimated Impact")
+            estimated_impact = root_cause_to_display.get('estimated_impact', {})
+            if estimated_impact:
+                cols = st.columns(len(estimated_impact))
+                for col, (metric, value) in zip(cols, estimated_impact.items()):
+                    with col:
+                        st.markdown(f"""
+                        <div style='background-color: white; padding: 16px; border-radius: 8px; 
+                                    border: 2px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;'>
+                            <p style='color: #6b7280; margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 500; 
+                                       text-transform: uppercase; letter-spacing: 0.05em;'>{metric.replace('_', ' ').title()}</p>
+                            <p style='color: #2563eb; margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2;'>{value}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("Impact estimates not available")
+            
+            # Sample resolution
+            if duplicate_groups and len(duplicate_groups) > 0:
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("#### Sample Duplicate Resolution")
                 
-                if sample_ci_details:
-                    with st.spinner("Analyzing duplicate group..."):
-                        try:
-                            recommendation = ai_engine.analyze_duplicate_group(sample_group, sample_ci_details)
-                            st.markdown(f"**Duplicate Group:** {', '.join(sample_group['cis'])}")
-                            st.success(f"**Recommended Primary:** {recommendation.get('primary_record', 'N/A')}")
-                            
-                            records_to_merge = recommendation.get('records_to_merge', [])
-                            if records_to_merge:
-                                st.warning(f"**Records to Merge:** {', '.join(records_to_merge)}")
-                            
-                            st.markdown(f"**Reasoning:** {recommendation.get('reasoning', 'N/A')}")
-                            
-                            remediation_steps = recommendation.get('remediation_steps', [])
-                            if remediation_steps:
-                                st.markdown("**Remediation Steps:**")
-                                for step in remediation_steps:
-                                    st.markdown(f"- {step}")
-                        except Exception as e:
-                            st.error(f"Failed to generate recommendation: {str(e)}")
+                sample_group = max(duplicate_groups, key=lambda x: len(x.get('cis', [])))
+                if sample_group.get('cis'):
+                    sample_ci_details = []
+                    for ci_name in sample_group['cis']:
+                        ci_matches = df[df['ci_name'] == ci_name]
+                        if len(ci_matches) > 0:
+                            sample_ci_details.append(ci_matches.iloc[0].to_dict())
+                    
+                    if sample_ci_details:
+                        with st.spinner("Analyzing duplicate group..."):
+                            try:
+                                recommendation = ai_engine.analyze_duplicate_group(sample_group, sample_ci_details)
+                                st.markdown(f"**Duplicate Group:** {', '.join(sample_group['cis'])}")
+                                st.success(f"**Recommended Primary:** {recommendation.get('primary_record', 'N/A')}")
+                                
+                                records_to_merge = recommendation.get('records_to_merge', [])
+                                if records_to_merge:
+                                    st.warning(f"**Records to Merge:** {', '.join(records_to_merge)}")
+                                
+                                st.markdown(f"**Reasoning:** {recommendation.get('reasoning', 'N/A')}")
+                                
+                                remediation_steps = recommendation.get('remediation_steps', [])
+                                if remediation_steps:
+                                    st.markdown("**Remediation Steps:**")
+                                    for step in remediation_steps:
+                                        st.markdown(f"- {step}")
+                            except Exception as e:
+                                st.error(f"Failed to generate recommendation: {str(e)}")
 
 # TAB 4: Data Quality
 with tab4:
