@@ -424,99 +424,79 @@ with tab2:
 with tab3:
     st.markdown("### AI-Powered Recommendations")
     
-    # Initialize session state for AI insights
+    # Initialize session state
     if 'ai_insights_generated' not in st.session_state:
         st.session_state.ai_insights_generated = False
     if 'ai_insights_data' not in st.session_state:
         st.session_state.ai_insights_data = None
     
-    # Track if we just generated in this cycle
-    just_generated = False
-    root_cause_to_display = None
-    
-    # Show generate button only if not already generated
+    # Show Generate button or Results
     if not st.session_state.ai_insights_generated:
         st.info("💡 **Ready to analyze:** Click below to generate AI-powered insights from your CMDB data.")
         
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            generate_button = st.button(
-                "🤖 Generate AI Insights",
-                type="primary",
-                use_container_width=True,
-                help="Analyze duplicates and generate recommendations using Claude AI"
-            )
-        
-        # Generate when button is clicked
-        if generate_button:
-            # Loading UI with progress
-            progress_container = st.empty()
-            status_container = st.empty()
-            
-            with progress_container.container():
-                st.markdown("""
-                <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            padding: 30px;
-                            border-radius: 12px;
-                            text-align: center;
-                            color: white;'>
-                    <h2 style='margin: 0; color: white;'>🤖 AI Analysis in Progress</h2>
-                    <p style='margin: 10px 0 0 0; opacity: 0.9;'>Processing your CMDB data with Claude AI...</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Progress steps
-            steps = [
-                ("📊 Loading duplicate groups...", 0.5),
-                ("🔍 Analyzing data quality patterns...", 1.0),
-                ("🧠 Identifying root causes...", 1.5),
-                ("💡 Generating recommendations...", 1.5),
-                ("📈 Calculating impact estimates...", 1.0),
-                ("✨ Finalizing insights...", 0.5)
-            ]
-            
-            progress_bar = status_container.progress(0)
-            status_text = st.empty()
-            
-            import time
-            total_steps = len(steps)
-            for i, (step_text, delay) in enumerate(steps):
-                status_text.markdown(f"**{step_text}**")
-                progress_bar.progress((i + 1) / total_steps)
-                time.sleep(delay)
-            
-            # Generate actual AI insights
-            try:
-                root_cause = ai_engine.analyze_root_causes(duplicate_analysis, quality_scores)
-                st.session_state.ai_insights_data = root_cause
-                st.session_state.ai_insights_generated = True
+            if st.button("🤖 Generate AI Insights", type="primary", use_container_width=True, help="Analyze duplicates and generate recommendations using Claude AI"):
+                # Loading UI
+                progress_container = st.empty()
+                status_container = st.empty()
                 
-                # Clear loading UI
-                progress_container.empty()
-                status_container.empty()
-                status_text.empty()
+                with progress_container.container():
+                    st.markdown("""
+                    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                padding: 30px; border-radius: 12px; text-align: center; color: white;'>
+                        <h2 style='margin: 0; color: white;'>🤖 AI Analysis in Progress</h2>
+                        <p style='margin: 10px 0 0 0; opacity: 0.9;'>Processing your CMDB data with Claude AI...</p>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                # Success message
-                st.success("✅ AI analysis complete! Insights generated successfully.")
+                progress_bar = status_container.progress(0)
+                status_text = st.empty()
                 
-                # Set flags for display
-                just_generated = True
-                root_cause_to_display = root_cause
+                steps = [
+                    ("📊 Loading duplicate groups...", 0.5),
+                    ("🔍 Analyzing data quality patterns...", 1.0),
+                    ("🧠 Identifying root causes...", 1.5),
+                    ("💡 Generating recommendations...", 1.5),
+                    ("📈 Calculating impact estimates...", 1.0),
+                    ("✨ Finalizing insights...", 0.5)
+                ]
                 
-            except Exception as e:
-                progress_container.empty()
-                status_container.empty()
-                status_text.empty()
-                st.error(f"❌ AI insights generation failed: {str(e)}")
-                st.info("💡 Tip: Check your API key and try again, or switch to Demo Mode in the sidebar.")
-    else:
-        # Already generated - load from cache
-        root_cause_to_display = st.session_state.ai_insights_data
+                for i, (step_text, delay) in enumerate(steps):
+                    status_text.markdown(f"**{step_text}**")
+                    progress_bar.progress((i + 1) / len(steps))
+                    time.sleep(delay)
+                
+                # Generate AI insights
+                try:
+                    root_cause = ai_engine.analyze_root_causes(duplicate_analysis, quality_scores)
+                    st.session_state.ai_insights_data = root_cause
+                    st.session_state.ai_insights_generated = True
+                    
+                    # Clear loading UI
+                    progress_container.empty()
+                    status_container.empty()
+                    status_text.empty()
+                    
+                    # Success message
+                    st.success("✅ AI analysis complete! Insights generated successfully.")
+                    
+                    # NO st.rerun() - display results below immediately
+                    
+                except Exception as e:
+                    progress_container.empty()
+                    status_container.empty()
+                    status_text.empty()
+                    st.error(f"❌ AI insights generation failed: {str(e)}")
+                    st.info("💡 Tip: Check your API key and try again, or switch to Demo Mode in the sidebar.")
     
-    # Display results header with Regenerate button (only if we have results)
-    if root_cause_to_display:
+    # Display results (if generated)
+    if st.session_state.ai_insights_generated and st.session_state.ai_insights_data:
+        root_cause_to_display = st.session_state.ai_insights_data
+        
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Header with Regenerate
         col1, col2 = st.columns([4, 1])
         with col1:
             st.markdown("#### 🎯 Analysis Results")
@@ -528,7 +508,6 @@ with tab3:
         
         # Executive summary
         st.info(f"**Executive Summary:** {root_cause_to_display.get('summary', 'Analysis complete')}")
-        
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Root causes
@@ -551,7 +530,6 @@ with tab3:
             for i, rec in enumerate(recommendations, 1):
                 priority = rec.get('priority', 'Medium')
                 priority_icon = "🔴" if priority == 'High' else "🟡" if priority == 'Medium' else "🟢"
-                
                 with st.expander(f"{priority_icon} **[{priority}] {rec.get('recommendation', 'Recommendation')}**", expanded=(i == 1)):
                     st.markdown(rec.get('details', 'No details available'))
         else:
@@ -567,13 +545,10 @@ with tab3:
             for col, (metric, value) in zip(cols, estimated_impact.items()):
                 with col:
                     st.markdown(f"""
-                    <div style='background-color: white; 
-                                padding: 16px; 
-                                border-radius: 8px; 
-                                border: 2px solid #e5e7eb;
-                                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                                text-align: center;'>
-                        <p style='color: #6b7280; margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;'>{metric.replace('_', ' ').title()}</p>
+                    <div style='background-color: white; padding: 16px; border-radius: 8px; 
+                                border: 2px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;'>
+                        <p style='color: #6b7280; margin: 0 0 8px 0; font-size: 0.75rem; font-weight: 500; 
+                                   text-transform: uppercase; letter-spacing: 0.05em;'>{metric.replace('_', ' ').title()}</p>
                         <p style='color: #2563eb; margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2;'>{value}</p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -586,7 +561,6 @@ with tab3:
             st.markdown("#### Sample Duplicate Resolution")
             
             sample_group = max(duplicate_groups, key=lambda x: len(x.get('cis', [])))
-            
             if sample_group.get('cis'):
                 sample_ci_details = []
                 for ci_name in sample_group['cis']:
@@ -598,7 +572,6 @@ with tab3:
                     with st.spinner("Analyzing duplicate group..."):
                         try:
                             recommendation = ai_engine.analyze_duplicate_group(sample_group, sample_ci_details)
-                            
                             st.markdown(f"**Duplicate Group:** {', '.join(sample_group['cis'])}")
                             st.success(f"**Recommended Primary:** {recommendation.get('primary_record', 'N/A')}")
                             
