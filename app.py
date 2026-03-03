@@ -446,8 +446,8 @@ with tab3:
                 help="Analyze duplicates and generate recommendations using Claude AI"
             )
         
-        # Auto-generate if in live mode and first load
-        if generate_button or should_auto_generate:
+        # Only generate when button is clicked
+        if generate_button:
             # Loading UI with progress
             progress_container = st.empty()
             status_container = st.empty()
