@@ -422,7 +422,6 @@ with tab2:
 
 # TAB 3: AI Insights
 with tab3:
-    
     st.markdown("### AI-Powered Recommendations")
     
     # Initialize session state for AI insights
@@ -431,7 +430,11 @@ with tab3:
     if 'ai_insights_data' not in st.session_state:
         st.session_state.ai_insights_data = None
     
-    # Show generate button (user must click - NO auto-generation)
+    # Track if we just generated in this cycle
+    just_generated = False
+    root_cause_to_display = None
+    
+    # Show generate button only if not already generated
     if not st.session_state.ai_insights_generated:
         st.info("💡 **Ready to analyze:** Click below to generate AI-powered insights from your CMDB data.")
         
@@ -444,11 +447,8 @@ with tab3:
                 help="Analyze duplicates and generate recommendations using Claude AI"
             )
         
-        # Only generate when button is clicked
+        # Generate when button is clicked
         if generate_button:
-            # Set active tab to stay on AI Insights
-            st.session_state.active_tab = 2
-            
             # Loading UI with progress
             progress_container = st.empty()
             status_container = st.empty()
@@ -499,7 +499,9 @@ with tab3:
                 # Success message
                 st.success("✅ AI analysis complete! Insights generated successfully.")
                 
-                # NO st.rerun() - let results display naturally below
+                # Set flags for display
+                just_generated = True
+                root_cause_to_display = root_cause
                 
             except Exception as e:
                 progress_container.empty()
@@ -507,14 +509,14 @@ with tab3:
                 status_text.empty()
                 st.error(f"❌ AI insights generation failed: {str(e)}")
                 st.info("💡 Tip: Check your API key and try again, or switch to Demo Mode in the sidebar.")
+    else:
+        # Already generated - load from cache
+        root_cause_to_display = st.session_state.ai_insights_data
     
-    # Display generated insights (moved outside the if/else to always show after generation)
-    if st.session_state.ai_insights_generated and st.session_state.ai_insights_data:
-        # Display generated insights
-        root_cause = st.session_state.ai_insights_data
-        
-        # Add a subtle header with refresh option
+    # Display results header with Regenerate button (only if we have results)
+    if root_cause_to_display:
         st.markdown("<br>", unsafe_allow_html=True)
+        
         col1, col2 = st.columns([4, 1])
         with col1:
             st.markdown("#### 🎯 Analysis Results")
@@ -522,16 +524,16 @@ with tab3:
             if st.button("🔄 Regenerate", help="Generate fresh AI insights"):
                 st.session_state.ai_insights_generated = False
                 st.session_state.ai_insights_data = None
-                st.rerun()  # This will reset to Generate button state
+                st.rerun()
         
         # Executive summary
-        st.info(f"**Executive Summary:** {root_cause.get('summary', 'Analysis complete')}")
+        st.info(f"**Executive Summary:** {root_cause_to_display.get('summary', 'Analysis complete')}")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Root causes
         st.markdown("#### Root Causes Identified")
-        root_causes = root_cause.get('root_causes', [])
+        root_causes = root_cause_to_display.get('root_causes', [])
         if root_causes:
             for i, cause in enumerate(root_causes, 1):
                 with st.expander(f"**{i}. {cause.get('cause', 'Unknown')}** (Impact: {cause.get('impact', 'Unknown')})", expanded=(i == 1)):
@@ -544,7 +546,7 @@ with tab3:
         
         # Recommendations
         st.markdown("#### Actionable Recommendations")
-        recommendations = root_cause.get('recommendations', [])
+        recommendations = root_cause_to_display.get('recommendations', [])
         if recommendations:
             for i, rec in enumerate(recommendations, 1):
                 priority = rec.get('priority', 'Medium')
@@ -559,7 +561,7 @@ with tab3:
         
         # Estimated impact
         st.markdown("#### Estimated Impact")
-        estimated_impact = root_cause.get('estimated_impact', {})
+        estimated_impact = root_cause_to_display.get('estimated_impact', {})
         if estimated_impact:
             cols = st.columns(len(estimated_impact))
             for col, (metric, value) in zip(cols, estimated_impact.items()):
