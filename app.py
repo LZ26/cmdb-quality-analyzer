@@ -378,6 +378,9 @@ elif st.session_state.active_tab == "duplicates":
 elif st.session_state.active_tab == "ai":
     st.markdown("### AI-Powered Recommendations")
     
+    # Get duplicate groups for later use
+    duplicate_groups = duplicate_analysis.get('duplicate_groups', [])
+    
     # Show generate button if not generated
     if not st.session_state.ai_insights_generated:
         st.info("💡 **Ready to analyze:** Click below to generate AI-powered insights from your CMDB data.")
