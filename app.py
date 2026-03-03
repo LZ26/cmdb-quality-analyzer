@@ -422,6 +422,7 @@ with tab2:
 
 # TAB 3: AI Insights
 with tab3:
+    
     st.markdown("### AI-Powered Recommendations")
     
     # Initialize session state for AI insights
@@ -430,10 +431,7 @@ with tab3:
     if 'ai_insights_data' not in st.session_state:
         st.session_state.ai_insights_data = None
     
-    # Check if we should auto-generate (for first load in live mode)
-    should_auto_generate = not demo_mode and not st.session_state.ai_insights_generated
-    
-    # Show generate button or auto-generate
+    # Show generate button (user must click - NO auto-generation)
     if not st.session_state.ai_insights_generated:
         st.info("💡 **Ready to analyze:** Click below to generate AI-powered insights from your CMDB data.")
         
@@ -448,6 +446,9 @@ with tab3:
         
         # Only generate when button is clicked
         if generate_button:
+            # Set active tab to stay on AI Insights
+            st.session_state.active_tab = 2
+            
             # Loading UI with progress
             progress_container = st.empty()
             status_container = st.empty()
@@ -497,8 +498,8 @@ with tab3:
                 
                 # Success message
                 st.success("✅ AI analysis complete! Insights generated successfully.")
-                time.sleep(1)
-                st.rerun()
+                
+                # NO st.rerun() - let results display naturally below
                 
             except Exception as e:
                 progress_container.empty()
@@ -507,11 +508,13 @@ with tab3:
                 st.error(f"❌ AI insights generation failed: {str(e)}")
                 st.info("💡 Tip: Check your API key and try again, or switch to Demo Mode in the sidebar.")
     
-    else:
+    # Display generated insights (moved outside the if/else to always show after generation)
+    if st.session_state.ai_insights_generated and st.session_state.ai_insights_data:
         # Display generated insights
         root_cause = st.session_state.ai_insights_data
         
         # Add a subtle header with refresh option
+        st.markdown("<br>", unsafe_allow_html=True)
         col1, col2 = st.columns([4, 1])
         with col1:
             st.markdown("#### 🎯 Analysis Results")
@@ -519,7 +522,7 @@ with tab3:
             if st.button("🔄 Regenerate", help="Generate fresh AI insights"):
                 st.session_state.ai_insights_generated = False
                 st.session_state.ai_insights_data = None
-                st.rerun()
+                st.rerun()  # This will reset to Generate button state
         
         # Executive summary
         st.info(f"**Executive Summary:** {root_cause.get('summary', 'Analysis complete')}")
